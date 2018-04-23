@@ -1,10 +1,9 @@
 # tensorflow-image-recognition-chrome-extension
 Chrome browser extension for using TensorFlow image recognition on web pages
 
-This is a simple test on how to use TensorFlow image recognition in Google Chrome extension. It is intercepting all image downloads made by the browser and pushing them to TensorFlow pretrained ImageNet model (mobilenet_v1_0.25_144) to recognize items in images. This model is downloaded when the extension is started. After that it will change IMG title (mouse hover) html attribute to display image URL, original title and prediction results.
+This is a simple test on how to use TensorFlow.js image recognition in Google Chrome extension. This extension is intercepting all image fetch requests made by the browser and pushing them to TensorFlow pretrained ImageNet model (mobilenet_v1_0.25_244) to recognize items in images. The model is downloaded when the extension is started. After that it will start automatically modifying IMG element title (mouse hover text) html attribute to display image URL, original title and prediction results.
 
-It will only run the recognition if width or height of the image is larger than 128px. It fails to update the title sometimes when there is some fancy lazyloading module used on page.
-
+It will only run the recognition if width or height of the image is larger than 128px. It fails to update the title sometimes when there is some fancy lazyloading module (or some other js manipulation) used on page or the images are embedded (data:image/png;base64, ...). You can inspect the background page view (on chrome extensions page) to see more information about what is happening behind the scenes.
 
 ## How to try it?
 
