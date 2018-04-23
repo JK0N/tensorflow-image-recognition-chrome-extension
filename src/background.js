@@ -107,18 +107,18 @@ class BackgroundProcessing {
     }
 
     var meta = this.imageRequests[src];
-    if (meta && meta.predictions) {
-      return meta.predictions;
-    }
+    if (meta && meta.tabId) {
+      if (!meta.predictions) {
+        const img = await this.loadImage(src);
+        if (img) {
+          meta.predictions = await this.predict(img);
+        }
+      }
 
-    const img = await this.loadImage(src);
-    if (img) {
-      const predictions = await this.predict(img);
-      if (predictions) {
-        this.imageRequests[src].predictions = predictions;
+      if (meta.predictions) {
         chrome.tabs.sendMessage(meta.tabId, {
           action: 'IMAGE_PROCESSED',
-          payload: this.imageRequests[src],
+          payload: meta,
         });
       }
     }
