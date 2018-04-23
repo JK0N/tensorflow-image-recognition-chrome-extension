@@ -34,3 +34,15 @@ npm run build
 
 - Hover over images on web pages to display image recognition details.
 
+
+## Examples
+
+<p>
+  <img src="https://raw.githubusercontent.com/JK0N/tensorflow-image-recognition-chrome-extension/master/examples/lion-fish.png" />
+  <b>Lion fish</b>
+</p>
+
+<p>
+  <img src="https://raw.githubusercontent.com/JK0N/tensorflow-image-recognition-chrome-extension/master/examples/hotdog.png" />
+  <b>Hot dog</b>
+</p>
