@@ -36,6 +36,7 @@ class BackgroundProcessing {
   async loadImage(src) {
     return new Promise(resolve => {
       var img = document.createElement('img');
+      img.crossOrigin = "anonymous";
       img.onerror = function(e) {
         resolve(null);
       };
