@@ -5,7 +5,7 @@ This extension uses the [nsfwjs project](https://github.com/infinitered/nsfwjs) 
 
 The extension right now runs quite slow on pages with many pages.
 
-## Run
+## Build and Run
 
 First install the needed npm modules
 ```
@@ -16,6 +16,8 @@ Then build it
 ```
 npm run build
 ```
+
+Now, you can load the dist folder as an unpacked extension.
 
 
 ## Examples
