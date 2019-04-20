@@ -20,9 +20,9 @@
 		"nsfwjs"
 	],
 	"scripts": {
-		"copy": "cp src/content.js dist/src/ && cp src/nsfw_classes.js dist/src/ && cp src/nsfw_wrapper.js dist/src/",
+		"copy": "cp src/content.js dist/src/",
 		"clear": "rm dist/src/content.js && rm dist/src/nsfw_classes.js && rm dist/src/nsfw_wrapper.js",
-		"build": "parcel build src/background.js -d dist/src/ -o background && npm run copy"
+		"build": "parcel build src/background.js -d dist/src/ -o background && parcel build src/worker.js -d dist/src/ -o worker && npm run copy"
 	},
 	"author": "GramThanos",
 	"devDependencies": {

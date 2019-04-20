@@ -5,6 +5,7 @@
 	"homepage_url": "https://github.com/GramThanos",
 	"author": "GramThanos",
 	"permissions": [
+		"system.cpu",
 		"activeTab",
 		"declarativeContent",
 		"webRequest",
