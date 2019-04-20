@@ -1,9 +1,11 @@
 # NSFW Image Filter browser extension
 Cross browser extension that detects and blurs NSFW images
 
+This extension is an experiment as it is quite cpu hangry. Performance optimizations should be made to make it usable for daily usage.
+
 This extension uses the [nsfwjs project](https://github.com/infinitered/nsfwjs) and the model from the [nsfw model project](https://github.com/gantman/nsfw_model). The extension structure was based on the [tensorflow-image-recognition-chrome-extension](https://github.com/JK0N/tensorflow-image-recognition-chrome-extension).
 
-The extension right now runs quite slow on pages with many pages.
+The extension right now runs quite slow on pages with many images.
 
 ## Build and Run
 
