@@ -5,9 +5,9 @@ This extension uses the [nsfwjs](https://github.com/infinitered/nsfwjs) library 
 
 ## Examples
 
-![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-1.png)
+Good filter example
 ![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-2.png)
-![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-3.png)
-![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-4.png)
+
+False filter example
 ![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-5.png)
 
