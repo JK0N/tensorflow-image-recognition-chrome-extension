@@ -7,43 +7,6 @@ const MODEL_PATH = browser.extension.getURL('model/');
 const IMG_MIN_WIDTH = 32;
 const IMG_MIN_HEIGHT = 32;
 
-
-class Cache {
-	constructor() {
-		this.table = {};
-
-		const timeout = 5 * 60 * 1000;
-		setInterval(() => {
-			this.clean(timeout);
-		}, timeout);
-	}
-
-	get(id) {
-		if (!this.table.hasOwnProperty(id)) {
-			return null;
-		}
-		this.table[id].timestamp = new Date().getTime();
-		return this.table[id];
-	}
-
-	set(id, data) {
-		this.table[id] = {
-			id : id,
-			data : data,
-			timestamp : new Date().getTime()
-		};
-	}
-
-	clean(timeout) {
-		const threshold = new Date().getTime() - timeout;
-		for (let id in this.table) {
-			if (this.table.hasOwnProperty(id) && this.table[id].timestamp < threshold) {
-				delete this.table[id];
-			}
-		}
-	}
-}
-
 class NSFW_Processing {
 
 	constructor() {
@@ -67,8 +30,18 @@ class NSFW_Processing {
 		// Listen for content script requests
 		browser.runtime.onMessage.addListener((message, sender) => {
 			if (message && message.action === 'NSFW-IMAGE-FOR-ANALYSIS') {
-				//console.log('@@@', message.payload, sender.tab.id);
 				this.handleImage(message.payload.url, sender.tab.id);
+			}
+		});
+
+		// Listen tab close
+		chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+			var data = this.cache.all();
+			for (let id in data) {
+				if (data.hasOwnProperty(id)) {
+					let index = data[id].tabs.indexOf(tabId);
+					if (index > -1) data[id].tabs.splice(index, 1);
+				}
 			}
 		});
 	}
@@ -86,6 +59,10 @@ class NSFW_Processing {
 			if (meta.tabs.indexOf(tabId) == -1) {
 				meta.tabs.push(tabId);
 			}
+			// If analysis is not running
+			if (!meta.analyzing) {
+				this.analyzeImage(meta);
+			}
 			return;
 		}
 
@@ -93,6 +70,7 @@ class NSFW_Processing {
 		meta = {
 			tabs : [tabId],
 			url : url,
+			analyzing : false,
 			analyzed : false,
 			predictions : null
 		};
@@ -121,8 +99,10 @@ class NSFW_Processing {
 		if (!img) return;
 
 		// Analyze image
+		meta.analyzing = true;
 		meta.predictions = await this.predict(img);
 		if (!meta.predictions) return;
+		meta.analyzing = false;
 		meta.analyzed = true;
 
 		//console.log('analyzeImage', meta);
@@ -170,6 +150,52 @@ class NSFW_Processing {
 		//const totalTime = Math.floor(performance.now() - startTime);
 		//console.log(`Prediction done in ${totalTime}ms:`, predictions);
 		return predictions;
+	}
+}
+
+class Cache {
+	constructor() {
+		this.table = {};
+
+		const timeout = 5 * 60 * 1000;
+		setInterval(() => {
+			this.clean(timeout);
+		}, timeout);
+	}
+
+	get(id) {
+		if (!this.table.hasOwnProperty(id)) {
+			return null;
+		}
+		this.table[id].timestamp = new Date().getTime();
+		return this.table[id];
+	}
+
+	all() {
+		var table = {};
+		for (let id in this.table) {
+			if (this.table.hasOwnProperty(id)) {
+				list[id] = this.table[id].data;
+			}
+		}
+		return table;
+	}
+
+	set(id, data) {
+		this.table[id] = {
+			id : id,
+			data : data,
+			timestamp : new Date().getTime()
+		};
+	}
+
+	clean(timeout) {
+		const threshold = new Date().getTime() - timeout;
+		for (let id in this.table) {
+			if (this.table.hasOwnProperty(id) && this.table[id].timestamp < threshold) {
+				delete this.table[id];
+			}
+		}
 	}
 }
 
