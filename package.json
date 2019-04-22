@@ -21,8 +21,12 @@
 	],
 	"scripts": {
 		"copy": "cp src/content.js dist/src/",
-		"clear": "rm dist/src/content.js && rm dist/src/nsfw_classes.js && rm dist/src/nsfw_wrapper.js",
-		"build": "parcel build src/background.js -d dist/src/ -o background && parcel build src/worker.js -d dist/src/ -o worker && npm run copy"
+
+		"build": "npm run build-nsfw && npm run build-background && npm run build-worker && npm run copy && npm run build-clean",
+			"build-nsfw": "tsc src/nsfw_classes.ts && tsc src/nsfw_wrapper.ts",
+			"build-background": "parcel build src/background.js -d dist/src/ -o background",
+			"build-worker": "parcel build src/worker.js -d dist/src/ -o worker",
+			"build-clean": "rm src/nsfw_classes.js && rm src/nsfw_wrapper.js"
 	},
 	"author": "GramThanos",
 	"devDependencies": {

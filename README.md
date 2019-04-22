@@ -1,11 +1,16 @@
 # NSFW Image Filter browser extension
 Cross browser extension that detects and blurs NSFW images
 
-This extension is an experiment as it is quite cpu hangry. Performance optimizations should be made to make it usable for daily usage.
+This extension is experimental. It is usable but it needs some UI improvements and a settings system so that the user can personalize it.
 
-This extension uses the [nsfwjs project](https://github.com/infinitered/nsfwjs) and the model from the [nsfw model project](https://github.com/gantman/nsfw_model). The extension structure was based on the [tensorflow-image-recognition-chrome-extension](https://github.com/JK0N/tensorflow-image-recognition-chrome-extension).
+This project uses the [nsfwjs project](https://github.com/infinitered/nsfwjs) and the model from the [nsfw model project](https://github.com/gantman/nsfw_model). The initial extension's structure was based on the [tensorflow-image-recognition-chrome-extension](https://github.com/JK0N/tensorflow-image-recognition-chrome-extension).
 
-The extension right now runs quite slow on pages with many images.
+Keep in mind that in pages with many images the results will be quite slow.
+
+## Load extension
+
+Download this repo and then load the disc folder as an unpacked extension on your Google Chrome, your Firefox or your Opera. 
+
 
 ## Build and Run
 
@@ -24,9 +29,9 @@ Now, you can load the dist folder as an unpacked extension.
 
 ## Examples
 
-Good filter example
-![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-2.png)
+Example with good results
+![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-1.png)
 
-False filter example
-![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-5.png)
+Example with some false positive results
+![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-2.png)
 

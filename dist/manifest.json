@@ -1,6 +1,6 @@
 {
 	"name": "NSFW Image Filter",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"description": "Detect and blur NSFW images.",
 	"homepage_url": "https://github.com/GramThanos",
 	"author": "GramThanos",
@@ -18,14 +18,12 @@
 		"scripts": ["src/background.js"],
 		"persistent": true
 	},
-	"content_scripts": [
-		{
-			"matches": ["http://*/*", "https://*/*"],
-			"js": ["src/content.js"],
-			"all_frames": true,
-			"run_at": "document_start"
-		}
-	],
+	"content_scripts": [{
+		"matches": ["http://*/*", "https://*/*"],
+		"js": ["src/content.js"],
+		"run_at": "document_start",
+		"all_frames": true
+	}],
 	"web_accessible_resources": [
 		"model/*"
 	],

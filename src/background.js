@@ -4,66 +4,87 @@ import * as nsfwjs from './nsfw_wrapper.js';
 
 var browser = chrome || browser;
 
-const MODEL_PATH = browser.extension.getURL('model/');
-const IMG_MIN_WIDTH = 32;
-const IMG_MIN_HEIGHT = 32;
-
 class NSFW_Processing {
 
 	constructor() {
-		this.useWorkers = false;
-		this.model = null;
+		// Options
+		this.options = {
+			// Run network in workers
+			useWorkers : false,
+			// Ignore images smaller than
+			imageMinWidth : 64,
+			imageMinHeight : 64,
+
+			// Path to model files
+			modelPath : browser.extension.getURL('model/')
+		};
+
+		// Image cache
 		this.cache = new Cache();
 
+		// Network
+		this.network = {};
+
 		// Listen for images
-		this.addListeners();
+		this.addImageListeners();
 
 		// If use workers
-		if (this.useWorkers) {
+		if (this.options.useWorkers) {
 			// Load workers
 			browser.system.cpu.getInfo((info) => {
-				this.loadWorkers(info.numOfProcessors);
+				this.prepareNetwork_Workers(info.numOfProcessors);
 			});
 		}
 		// Use this thread
 		else {
-			this.loadModel();
+			this.prepareNetwork_Self();
 		}
-		
 	}
 
-	loadWorkers(num) {
-		this.workers_ready = false;
+
+
+	// Prepare Network
+	// --------------------------------------------------
+	
+	// Use Workers
+	prepareNetwork_Workers(num) {
 		this.jobs = [];
-		this.workers = [];
-		console.log('Loading ' + num + ' workers...');
+		this.network.ready_workers = false;
+		this.network.workers = [];
+
 		let wait2load = num;
+		console.log('Loading ' + num + ' workers...');
+
+		// Create workers
 		for (let i = 1; i <= num; i++) {
 			let worker = {};
 			worker.id = i;
 			worker.ready = false;
 			worker.busy = false;
 			worker.worker = new Worker(browser.extension.getURL('src/worker.js'));
+			// Handle worker messages
 			worker.worker.onmessage = (e) => {
 				if (!e.data || !e.data.action) return;
 				switch(e.data.action) {
-
+					// Worker ready message
 					case 'initialized':
 						console.log('Worker ' + worker.id + ' loaded.');
 						worker.ready = true;
 						wait2load--;
 						if (wait2load <= 0) {
 							console.log('All workers are ready.');
-							this.workers_ready = true;
+							this.network.ready_workers = true;
 						}
 						break;
 
+					// Worker job result message
 					case 'result':
 						worker.busy = false;
 						console.log('Result from worker ' + worker.id + '.', e.data);
 						this.analyzeImageResult(e.data.data.id, e.data.data.predictions);
 						break;
 
+					// Worker debug message
 					case 'debug':
 						console.log('Debug worker ' + worker.id, e.data);
 						break;
@@ -71,31 +92,41 @@ class NSFW_Processing {
 				}
 				this.handleJobs();
 			}
-			worker.worker.postMessage({action : 'init', data : MODEL_PATH});
-			this.workers.push(worker);
+			// Start worker
+			worker.worker.postMessage({action : 'init', data : this.options.modelPath});
+			this.network.workers.push(worker);
 		}
 	}
 
-	loadModel() {
-		this.model_ready = false;
+	// Use this thread
+	prepareNetwork_Self() {
 		this.jobs = [];
-		this.here_busy = false;
-		this.model = null;
+		this.network.ready_self = false;
+		this.network.busy_self = false;
+		this.network.model = null;
 		console.log('Loading model...');
 
 		// Load model
-		nsfwjs.load(MODEL_PATH).then((model) => {
-			this.model = model;
-			this.model_ready = true;
+		nsfwjs.load(this.options.modelPath).then((model) => {
+			this.network.model = model;
+			this.network.ready_self = true;
 			console.log('Model loaded.');
 			this.handleJobs();
 		});
 	}
 
-	addListeners() {
+
+
+	// Process Images
+	// --------------------------------------------------
+	
+	// Use Workers
+	addImageListeners() {
+
 		// Listen for images requests
 		browser.webRequest.onCompleted.addListener(req => {
-			if (req && req.tabId > 0) {
+			// If valid request and seems to be an image
+			if (req && req.tabId > 0 && this.checkIfImageURL(req.url)) {
 				this.handleImage(req.url, req.tabId);
 			}
 		}, {urls: ["<all_urls>"], types: ["image"]});
@@ -103,15 +134,27 @@ class NSFW_Processing {
 		// Listen for content script requests
 		browser.runtime.onMessage.addListener((message, sender) => {
 			if (message && message.action === 'NSFW-IMAGE-FOR-ANALYSIS') {
-				this.handleImage(message.payload.url, sender.tab.id);
+				// If seems to be an image
+				//if (this.checkIfImageURL(message.payload.url)) {
+					this.handleImage(message.payload.url, sender.tab.id);
+				//}
+				// Report not an image
+				//else {
+				//	this.reportImageAnalysis(sender.tab.id, {
+				//		url : message.payload.url,
+				//		predictions : [{className : 'not-an-image', probability : 0.5}]
+				//	});
+				//}
 			}
 		});
 
 		// Listen tab close
 		browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+			// Get cache data
 			var data = this.cache.all();
 			for (let id in data) {
 				if (data.hasOwnProperty(id)) {
+					// Remove closed tab from cache
 					let index = data[id].tabs.indexOf(tabId);
 					if (index > -1) data[id].tabs.splice(index, 1);
 				}
@@ -119,6 +162,25 @@ class NSFW_Processing {
 		});
 	}
 
+	// Check image url
+	checkIfImageURL(url) {
+		// If pure image
+		if ((/(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*\.(?:jpg|jpeg|gif|png))(?:\?([^#]*))?(?:#(.*))?/).test(url)) {
+			return true;
+		}
+		// If base 64
+		else if ((/^data:image\/(?:jpg|jpeg|gif|png);base64,/i).test(url)) {
+			return true;
+		}
+		// If known API
+		// GOOGLE Search api https://encrypted-blabla.gstatic.com/images?q=blabla
+		else if ((/\/images\?/i).test(url)) {
+			return true;
+		}
+		return false;
+	}
+
+	// Add image to cache and jobs
 	handleImage(url, tabId) {
 		// Ignore if exists
 		let meta = this.cache.get(url);
@@ -151,17 +213,25 @@ class NSFW_Processing {
 		this.analyzeImage(meta);
 	}
 
+	// Create and image analysis job
 	async analyzeImage(meta) {
 		// Load image
 		const img = await this.loadImage(meta.url);
-		if (!img) return;
+		if (!img) {
+			// Set as analysed
+			meta.analyzing = false;
+			meta.analyzed = true;
+			// Image will not be analyzed
+			this.analyzeImageResult(meta.url, [{className : 'not-analysed', probability : 0.5}]);
+			return;
+		};
 
 		// Analyze image
 		meta.analyzing = true;
-		//meta.predictions = await this.predict(img);
 
-
-		if (this.useWorkers) {
+		// If workers
+		if (this.options.useWorkers) {
+			// Parse image
 			let tensor = tf.browser.fromPixels(img);
 			tensor.data().then((data) => {
 				this.jobs.push({
@@ -175,7 +245,9 @@ class NSFW_Processing {
 				this.handleJobs();
 			});
 		}
+		// If self thread
 		else {
+			// Add to jobs
 			this.jobs.push({
 				id : meta.url,
 				img : img
@@ -185,41 +257,70 @@ class NSFW_Processing {
 
 	}
 
+	async loadImage(src) {
+		return new Promise(resolve => {
+			var img = document.createElement('img');
+			img.crossOrigin = "anonymous";
+			img.onerror = (e) => {
+				resolve(null);
+			};
+			img.onload = (e) => {
+				// If valid image and need analysis
+				if (
+					(img.height && img.height > this.options.imageMinHeight) ||
+					(img.width && img.width > this.options.imageMinWidth)
+				) {
+					resolve(img);
+				}
+				// Image will not be analysed
+				else {
+					resolve(null);
+				}
+			}
+			img.src = src;
+		});
+	}
+
+
+
+	// Job handling
+	// --------------------------------------------------
+	
 	handleJobs() {
-		if (this.useWorkers) {
+		if (this.options.useWorkers) {
 			return this.handleJobs_Workers();
 		}
 		else {
-			return this.handleJobs_Here();
+			return this.handleJobs_Self();
 		}
 	}
 
 	handleJobs_Workers() {
-		if (!this.workers_ready) return false;
+		if (!this.network.ready_workers) return false;
 		// If no jobs exit
 		if (this.jobs.length == 0) return false;
 		// Find worker
-		for (let i = 0; i < this.workers.length; i++) {
-			if (!this.workers[i].busy) {
-				this.workers[i].busy = true;
-				this.workers[i].worker.postMessage({action : 'job', data : this.jobs.shift()});
+		for (let i = 0; i < this.network.workers.length; i++) {
+			if (!this.network.workers[i].busy) {
+				this.network.workers[i].busy = true;
+				this.network.workers[i].worker.postMessage({action : 'job', data : this.jobs.shift()});
 				return true;
 			}
 		}
 		return false;
 	}
 
-	handleJobs_Here() {
-		if (!this.model_ready) return false;
+	handleJobs_Self() {
+		if (!this.network.ready_self) return false;
 		// If no jobs exit
 		if (this.jobs.length == 0) return false;
 		// Return if busy
-		if (this.here_busy) return false;
-		this.here_busy = true;
+		if (this.network.busy_self) return false;
+		this.network.busy_self = true;
 
 		let job = this.jobs.shift();
-		this.model.classify(job.img).then((predictions) => {
-			this.here_busy = false;
+		this.network.model.classify(job.img).then((predictions) => {
+			this.network.busy_self = false;
 			this.analyzeImageResult(job.id, predictions);
 			this.handleJobs();
 		});
@@ -228,6 +329,7 @@ class NSFW_Processing {
 	}
 
 	analyzeImageResult(url, predictions) {
+		// Get data from cache
 		var meta = this.cache.get(url);
 		if (!meta) {
 			meta = this.cache.set(url, {
@@ -239,12 +341,15 @@ class NSFW_Processing {
 			});
 		}
 
-		if (!predictions) return;
+		// If no prediction, set as failed
+		if (!predictions) {
+			predictions = [{className : 'analysis-failed', probability : 0.5}]
+		};
+
+		// Update cache
 		meta.predictions = predictions;
 		meta.analyzing = false;
 		meta.analyzed = true;
-
-		//console.log(JSON.parse(JSON.stringify(meta)));
 
 		// Report analysis
 		var tabs = meta.tabs;
@@ -262,31 +367,13 @@ class NSFW_Processing {
 			payload: meta,
 		});
 	}
-
-	async loadImage(src) {
-		return new Promise(resolve => {
-			var img = document.createElement('img');
-			img.crossOrigin = "anonymous";
-			img.onerror = function(e) {
-				resolve(null);
-			};
-			img.onload = function(e) {
-				if ((img.height && img.height > IMG_MIN_HEIGHT) || (img.width && img.width > IMG_MIN_WIDTH)) {
-					resolve(img);
-				}
-				// Let's skip all tiny images
-				resolve(null);
-			}
-			img.src = src;
-		});
-	}
 }
 
 class Cache {
 	constructor() {
 		this.table = {};
 
-		const timeout = 5 * 60 * 1000;
+		const timeout = 60 * 60 * 1000;
 		setInterval(() => {
 			this.clean(timeout);
 		}, timeout);
