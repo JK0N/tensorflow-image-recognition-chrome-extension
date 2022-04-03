@@ -13,7 +13,7 @@ Any modern browser that supports the WebExtensions API (so that you can load the
 
 ## Load extension
 
-Download this repo and then load the disc folder as an unpacked extension on your Google Chrome, your Firefox or your Opera. 
+Download this repo and then load the `dist` folder as an unpacked extension on your Google Chrome, your Firefox or your Opera. 
 
 
 ## Build and Run
