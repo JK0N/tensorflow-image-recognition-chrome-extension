@@ -1,47 +1,41 @@
-# tensorflow-image-recognition-chrome-extension
-Chrome browser extension for using TensorFlow image recognition on web pages
+# NSFW Image Filter browser extension
+Cross browser extension that detects and blurs NSFW images
 
-This is a simple test on how to use TensorFlow.js image recognition in Google Chrome extension. This extension is intercepting all image fetch requests made by the browser and pushing them to TensorFlow pretrained ImageNet model (mobilenet_v1_0.25_244) to recognize items in images. The model is downloaded when the extension is started. After that it will start automatically modifying IMG element title (mouse hover text) html attribute to display image URL, original title and prediction results.
+**This extension is experimental. It is usable but it needs some UI improvements and a settings system so that the user can personalize it.**
 
-It will only run the recognition if width or height of the image is larger than 128px. It fails to update the title sometimes when there is some fancy lazyloading module (or some other js manipulation) used on page or the images are embedded (data:image/png;base64, ...). You can inspect the background page view (on chrome extensions page) to see more information about what is happening behind the scenes.
+The aim of this extension is to block inapropriate images on the web page using machine learing. By using the [nsfwjs project](https://github.com/infinitered/nsfwjs) and the TensorFlow javascript libray in combination with the [nsfw model](https://github.com/gantman/nsfw_model), we run web images through the trained network and deside if the image should be blocked.
 
-## How to try it?
+Keep in mind that in pages with many images the results will be quite slow.
 
-```sh
-git clone https://github.com/JK0N/tensorflow-image-recognition-chrome-extension.git
+## Requirements
+
+Any modern browser that supports the WebExtensions API (so that you can load the extension) and support for WebGL (for the TensorFlow library).
+
+## Load extension
+
+Download this repo and then load the `dist` folder as an unpacked extension on your Google Chrome, your Firefox or your Opera. 
+
+
+## Build and Run
+
+First install the needed npm modules
 ```
-
-```sh
-cd tensorflow-image-recognition-chrome-extension/
-```
-
-```sh
 npm i
 ```
 
-```sh
+Then build it
+```
 npm run build
 ```
 
-- Open Google Chrome extensions page: chrome://extensions/
-
-- Enable developer mode
-
-- Click [LOAD UNPACKED]
-
-- Select tensorflow-image-recognition-chrome-extension/dist/ -folder!
-
-- Hover over images on web pages to display image recognition details.
+You can then load the dist folder as an unpacked extension.
 
 
 ## Examples
 
-<p>
-  <img src="https://raw.githubusercontent.com/JK0N/tensorflow-image-recognition-chrome-extension/master/examples/lion-fish.png" />
-  <b>Lion fish</b>
-</p>
+Example with good results
+![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-1.png)
 
-<p>
-  <img src="https://raw.githubusercontent.com/JK0N/tensorflow-image-recognition-chrome-extension/master/examples/hotdog.png" />
-  <b>Hot dog</b>
-</p>
+Example with some false positive results
+![example](https://raw.githubusercontent.com/GramThanos/NSFW-Image-Filter-Browser-Extension/master/examples/Screenshot-2.png)
+
