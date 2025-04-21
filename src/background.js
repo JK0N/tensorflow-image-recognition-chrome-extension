@@ -2,7 +2,7 @@ import 'babel-polyfill';
 import * as tf from '@tensorflow/tfjs';
 import { IMAGENET_CLASSES } from './imagenet_classes';
 
-const MOBILENET_MODEL_PATH = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json';
+const MOBILENET_MODEL_PATH = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.50_224/model.json';
 const IMAGE_SIZE = 224;
 const TOPK_PREDICTIONS = 10;
 
@@ -26,11 +26,14 @@ class BackgroundProcessing {
   async loadModel() {
     console.log('Loading model...');
     const startTime = performance.now();
-    this.model = await tf.loadModel(MOBILENET_MODEL_PATH);
-    this.model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
-
-    const totalTime = Math.floor(performance.now() - startTime);
-    console.log(`Model loaded and initialized in ${totalTime}ms...`);
+    try {
+      this.model = await tf.loadGraphModel(MOBILENET_MODEL_PATH);
+      this.model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
+      const totalTime = Math.floor(performance.now() - startTime);
+      console.log(`Model loaded and initialized in ${totalTime}ms...`);
+    } catch (error) {
+      console.error('Error loading model:', error);
+    }
   }
 
   async loadImage(src) {
@@ -38,6 +41,7 @@ class BackgroundProcessing {
       var img = document.createElement('img');
       img.crossOrigin = "anonymous";
       img.onerror = function(e) {
+        console.error('Error loading image:', e);
         resolve(null);
       };
       img.onload = function(e) {
@@ -84,19 +88,24 @@ class BackgroundProcessing {
   async predict(imgElement) {
     console.log('Predicting...');
     const startTime = performance.now();
-    const logits = tf.tidy(() => {
-      const img = tf.fromPixels(imgElement).toFloat();
-      const offset = tf.scalar(127.5);
-      const normalized = img.sub(offset).div(offset);
-      const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
-      return this.model.predict(batched);
-    });
+    try {
+      const logits = tf.tidy(() => {
+        const img = tf.browser.fromPixels(imgElement).toFloat();
+        const offset = tf.scalar(127.5);
+        const normalized = img.sub(offset).div(offset);
+        const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
+        return this.model.predict(batched);
+      });
 
-    // Convert logits to probabilities and class names.
-    const predictions = await this.getTopKClasses(logits, TOPK_PREDICTIONS);
-    const totalTime = Math.floor(performance.now() - startTime);
-    console.log(`Prediction done in ${totalTime}ms:`, predictions);
-    return predictions;
+      // Convert logits to probabilities and class names.
+      const predictions = await this.getTopKClasses(logits, TOPK_PREDICTIONS);
+      const totalTime = Math.floor(performance.now() - startTime);
+      console.log(`Prediction done in ${totalTime}ms:`, predictions);
+      return predictions;
+    } catch (error) {
+      console.error('Error during prediction:', error);
+      return null;
+    }
   }
 
   async analyzeImage(src) {

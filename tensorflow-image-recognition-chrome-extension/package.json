@@ -1,0 +1,45 @@
+{
+  "name": "tensorflow-image-recognition-chrome-extension",
+  "version": "0.1.0",
+  "description": "Chrome browser extension for using TensorFlow image recognition",
+  "keywords": [
+    "tensorflow",
+    "tf",
+    "tensor",
+    "machine learning",
+    "ml",
+    "ai",
+    "neural networks",
+    "neuralnetworks",
+    "deeplearning",
+    "model",
+    "image recognition",
+    "chrome extension",
+    "chrome",
+    "google"
+  ],
+  "scripts": {
+    "copy": "cp src/content.js dist/src/ && cp src/imagenet_classes.js dist/src/",
+    "build": "parcel build src/background.js -d dist/src/ -o background && npm run copy",
+    "watch": "npm run copy && parcel watch src/background.js --hmr-hostname localhost -d dist/src/ -o background"
+  },
+  "author": "Jouni Kontinen <jouni.kontinen___polarspin.com>",
+  "contributors": [
+    {
+      "name": "Jouni Kontinen",
+      "email": "jouni.kontinen___polarspin.com",
+      "url": "https://www.polarspin.com"
+    }
+  ],
+  "license": "Apache 2.0",
+  "devDependencies": {
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "clang-format": "^1.2.3",
+    "parcel-bundler": "^1.7.1"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^0.9.1"
+  }
+}
