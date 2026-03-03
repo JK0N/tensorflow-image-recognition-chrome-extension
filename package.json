@@ -40,6 +40,6 @@
     "parcel-bundler": "^1.7.1"
   },
   "dependencies": {
-    "@tensorflow/tfjs": "^0.9.1"
+    "@tensorflow/tfjs": "^4.22.0"
   }
 }
